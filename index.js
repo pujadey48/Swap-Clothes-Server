@@ -96,7 +96,28 @@ try{
         res.send(products);
     });
 
-    
+    app.delete('/product/:id', verifyJWT, async (req, res) => {
+        const id = req.params.id;
+
+        const uid = req.decoded.uid;
+        let query = { uid}
+        const user = await userCollection.findOne(query);
+
+        query = { _id: ObjectId(id) };
+        const product = await productCollection.findOne(query);
+
+        if(!user || !product){
+            res.send({status: false, message: "product not deleted"});
+        }
+        if(user.role == 'admin' || user.uid === product.createdBy){
+            query = { _id: ObjectId(id) };
+            const result = await productCollection.deleteOne(query);
+            console.log({query, result});
+            res.send(result);
+        } else {
+            res.send({status: false, message: "product not deleted"});
+        }
+    })
 
 }
 finally{
