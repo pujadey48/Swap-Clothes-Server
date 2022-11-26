@@ -70,6 +70,14 @@ try{
         res.send(categories);
     })
 
+    app.get('/users/admin/:uid', async (req, res) => {
+        const admin = req.params.uid;
+        const query = { uid : admin}
+        const user = await userCollection.findOne(query);
+        console.log(user);
+        res.send({ isAdmin: user?.role === 'admin' });
+    })
+
     
 
 }
