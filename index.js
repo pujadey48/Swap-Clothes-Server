@@ -78,6 +78,17 @@ try{
         res.send({ isAdmin: user?.role === 'admin' });
     })
 
+    app.post('/product', verifyJWT, async (req, res) => {
+        const product = req.body;
+        product.createdBy = req.decoded.uid;
+        product.timestamp = Date.now();
+        product.reported = false;
+        product.status = "available";
+        const result = await productCollection.insertOne(product);
+        console.log("result", result);
+        res.send(result);
+    });
+
     
 
 }
