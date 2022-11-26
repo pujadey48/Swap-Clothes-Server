@@ -70,54 +70,7 @@ try{
         res.send(categories);
     })
 
-    app.get('/users/admin/:uid', async (req, res) => {
-        const admin = req.params.uid;
-        const query = { uid : admin}
-        const user = await userCollection.findOne(query);
-        console.log(user);
-        res.send({ isAdmin: user?.role === 'admin' });
-    })
-
-    app.post('/product', verifyJWT, async (req, res) => {
-        const product = req.body;
-        product.createdBy = req.decoded.uid;
-        product.timestamp = Date.now();
-        product.reported = false;
-        product.status = "available";
-        const result = await productCollection.insertOne(product);
-        console.log("result", result);
-        res.send(result);
-    });
-
-    app.get('/myproducts', verifyJWT, async (req, res) => {
-        const query = { createdBy : req.decoded.uid}
-        const products = await productCollection.find(query).toArray();
-        console.log("result", products);
-        res.send(products);
-    });
-
-    app.delete('/product/:id', verifyJWT, async (req, res) => {
-        const id = req.params.id;
-
-        const uid = req.decoded.uid;
-        let query = { uid}
-        const user = await userCollection.findOne(query);
-
-        query = { _id: ObjectId(id) };
-        const product = await productCollection.findOne(query);
-
-        if(!user || !product){
-            res.send({status: false, message: "product not deleted"});
-        }
-        if(user.role == 'admin' || user.uid === product.createdBy){
-            query = { _id: ObjectId(id) };
-            const result = await productCollection.deleteOne(query);
-            console.log({query, result});
-            res.send(result);
-        } else {
-            res.send({status: false, message: "product not deleted"});
-        }
-    })
+    
 
 }
 finally{
