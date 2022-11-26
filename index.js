@@ -89,6 +89,13 @@ try{
         res.send(result);
     });
 
+    app.get('/myproducts', verifyJWT, async (req, res) => {
+        const query = { createdBy : req.decoded.uid}
+        const products = await productCollection.find(query).toArray();
+        console.log("result", products);
+        res.send(products);
+    });
+
     
 
 }
