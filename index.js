@@ -49,10 +49,12 @@ try{
     const productCollection = client.db('swapClothes').collection('products');
 
     app.post('/jwt', async (req, res) =>{
+        console.log(req.body);
         let user = req.body;
         const query = { uid: user.uid};
         const dbUser = await userCollection.findOne(query);
         if(!dbUser){
+            user.verified = false;
             await userCollection.insertOne(user);
         } else {
             user = dbUser;
@@ -60,7 +62,7 @@ try{
         role = user.role;
         const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d'});
         console.log({user, token, role});
-        res.send({role, token})
+        res.send({user, token})
     })
 
     app.get('/categories', async (req, res) => {
@@ -80,7 +82,18 @@ try{
 
     app.post('/product', verifyJWT, async (req, res) => {
         const product = req.body;
-        product.createdBy = req.decoded.uid;
+
+        const uid = req.decoded.uid;
+        let query = { uid}
+        const user = await userCollection.findOne(query);
+
+        if(!user){
+            res.send({status: false, message: "user not found"});
+        }
+
+        product.createdBy = user.uid;
+        product.createdByName = user.name;
+        product.createdByVerified = user.verified;
         product.timestamp = Date.now();
         product.reported = false;
         product.status = "available";
@@ -93,6 +106,14 @@ try{
         const query = { createdBy : req.decoded.uid}
         const products = await productCollection.find(query).toArray();
         console.log("result", products);
+        res.send(products);
+    });
+
+    app.get('/showCategoryProducts/:name', async (req, res) => {
+        const categoryName = req.params.name;
+        const query = {
+            categories: categoryName };
+        const products = await productCollection.find(query).toArray();
         res.send(products);
     });
 
@@ -109,6 +130,7 @@ try{
         if(!user || !product){
             res.send({status: false, message: "product not deleted"});
         }
+
         if(user.role == 'admin' || user.uid === product.createdBy){
             query = { _id: ObjectId(id) };
             const result = await productCollection.deleteOne(query);
