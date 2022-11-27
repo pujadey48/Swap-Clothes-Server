@@ -190,24 +190,47 @@ async function run() {
       res.send(sellers);
     });
 
-    app.patch("/verifySeller/:id", verifyJWT, verifyAdmin, async (req, res) => {
-        const sellerID = req.params.id;
-  
-        let query = { _id: ObjectId(sellerID) };
+    app.patch(
+      "/verifySeller/:uid",
+      verifyJWT,
+      verifyAdmin,
+      async (req, res) => {
+        const uid = req.params.uid;
+
+        let query = { uid };
         const seller = await userCollection.findOne(query);
-  
+
         if (seller && seller.role === "seller") {
-          const updatedDoc = {
+          query = { createdBy: uid };
+          let updatedDoc = {
+            $set: {
+              createdByVerified: true,
+            },
+          };
+          await productCollection.updateMany(query, updatedDoc);
+
+          query = { uid };
+          updatedDoc = {
             $set: {
               verified: true,
             },
           };
           const result = await userCollection.updateOne(query, updatedDoc);
+          console.log(result);
           res.send(result);
         } else {
           res.send({ status: false, message: "User is not a seller" });
         }
-      });
+      }
+    );
+
+    app.delete("/user/:uid", verifyJWT, verifyAdmin, async (req, res) => {
+      const uid = req.params.uid;
+      const query = { uid };
+      const result = await userCollection.deleteOne(query);
+      console.log({ query, result });
+      res.send(result);
+    });
   } finally {
   }
 }
