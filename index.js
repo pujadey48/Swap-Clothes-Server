@@ -176,6 +176,19 @@ async function run() {
       }
     });
 
+    app.patch("/reportProduct/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          reported: true,
+        },
+      };
+      const result = await productCollection.updateOne(query, updatedDoc);
+      console.log(result);
+      res.send(result);
+    });
+
     app.get("/getAllBuyers", verifyJWT, verifyAdmin, async (req, res) => {
       const query = { role: "buyer" };
       const buyers = await userCollection.find(query).toArray();
@@ -190,12 +203,17 @@ async function run() {
       res.send(sellers);
     });
 
-    app.get("/getReportedProducts", verifyJWT, verifyAdmin, async (req, res) => {
-      const query = { reported: true };
-      const reportedProducts = await productCollection.find(query).toArray();
-      console.log("result", reportedProducts);
-      res.send(reportedProducts);
-    });
+    app.get(
+      "/getReportedProducts",
+      verifyJWT,
+      verifyAdmin,
+      async (req, res) => {
+        const query = { reported: true };
+        const reportedProducts = await productCollection.find(query).toArray();
+        console.log("result", reportedProducts);
+        res.send(reportedProducts);
+      }
+    );
 
     app.patch(
       "/verifySeller/:uid",
