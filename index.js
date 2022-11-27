@@ -190,7 +190,24 @@ async function run() {
       res.send(sellers);
     });
 
-    
+    app.patch("/verifySeller/:id", verifyJWT, verifyAdmin, async (req, res) => {
+        const sellerID = req.params.id;
+  
+        let query = { _id: ObjectId(sellerID) };
+        const seller = await userCollection.findOne(query);
+  
+        if (seller && seller.role === "seller") {
+          const updatedDoc = {
+            $set: {
+              verified: true,
+            },
+          };
+          const result = await userCollection.updateOne(query, updatedDoc);
+          res.send(result);
+        } else {
+          res.send({ status: false, message: "User is not a seller" });
+        }
+      });
   } finally {
   }
 }
