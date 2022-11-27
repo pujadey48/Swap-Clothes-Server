@@ -135,6 +135,7 @@ async function run() {
     app.get("/advertisedProducts", async (req, res) => {
       const query = {
         show_in_ad: true,
+        status: 'available',
       };
       const products = await productCollection.find(query).toArray();
       res.send(products);
