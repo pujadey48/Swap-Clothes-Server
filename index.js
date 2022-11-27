@@ -51,6 +51,15 @@ async function run() {
       .collection("categories");
     const productCollection = client.db("swapClothes").collection("products");
 
+    async function verifyAdmin(req, res, next) {
+      const query = { uid: req.decoded.uid };
+      const dbUser = await userCollection.findOne(query);
+      if (dbUser.role !== "admin") {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      next();
+    }
+
     app.post("/jwt", async (req, res) => {
       console.log(req.body);
       let user = req.body;
@@ -165,6 +174,13 @@ async function run() {
       } else {
         res.send({ status: false, message: "product not updated" });
       }
+    });
+
+    app.get("/getAllBuyers", verifyJWT, verifyAdmin, async (req, res) => {
+      const query = { role: "buyer" };
+      const buyers = await userCollection.find(query).toArray();
+      console.log("result", buyers);
+      res.send(buyers);
     });
   } finally {
   }
