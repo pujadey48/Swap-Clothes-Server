@@ -132,6 +132,14 @@ async function run() {
       res.send(products);
     });
 
+    app.get("/advertisedProducts", async (req, res) => {
+      const query = {
+        show_in_ad: true,
+      };
+      const products = await productCollection.find(query).toArray();
+      res.send(products);
+    });
+
     app.delete("/product/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
 
