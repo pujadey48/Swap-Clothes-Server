@@ -182,6 +182,15 @@ async function run() {
       console.log("result", buyers);
       res.send(buyers);
     });
+
+    app.get("/getAllSellers", verifyJWT, verifyAdmin, async (req, res) => {
+      const query = { role: "seller" };
+      const sellers = await userCollection.find(query).toArray();
+      console.log("result", sellers);
+      res.send(sellers);
+    });
+
+    
   } finally {
   }
 }
