@@ -190,6 +190,13 @@ async function run() {
       res.send(sellers);
     });
 
+    app.get("/getReportedProducts", verifyJWT, verifyAdmin, async (req, res) => {
+      const query = { reported: true };
+      const reportedProducts = await productCollection.find(query).toArray();
+      console.log("result", reportedProducts);
+      res.send(reportedProducts);
+    });
+
     app.patch(
       "/verifySeller/:uid",
       verifyJWT,
