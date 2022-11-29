@@ -131,6 +131,7 @@ async function run() {
       const categoryName = req.params.name;
       const query = {
         categories: categoryName,
+        status: { $ne: "sold" },
       };
       const products = await productCollection.find(query).toArray();
       res.send(products);
@@ -139,7 +140,7 @@ async function run() {
     app.get("/advertisedProducts", async (req, res) => {
       const query = {
         show_in_ad: true,
-        status: "available",
+        status: { $ne: "sold" },
       };
       const products = await productCollection.find(query).toArray();
       res.send(products);
@@ -311,14 +312,24 @@ async function run() {
       const price = booking.productSellingPrice;
       const amount = price * 100;
 
-      const paymentIntent = await stripe.paymentIntents.create({
-        currency: "bdt",
-        amount: amount,
-        payment_method_types: ["card"],
-      });
-      res.send({
-        clientSecret: paymentIntent.client_secret,
-      });
+      let query = { _id: ObjectId(booking.productID) };
+      const product = await productCollection.findOne(query);
+
+      if (product.status === "") {
+        const paymentIntent = await stripe.paymentIntents.create({
+          currency: "bdt",
+          amount: amount,
+          payment_method_types: ["card"],
+        });
+        res.send({
+          clientSecret: paymentIntent.client_secret,
+        });
+      } else {
+        res.send({
+          errorMessage:
+            "Sorry!! This product is alrady sold. Please book another available product",
+        });
+      }
     });
 
     app.post("/payments", verifyJWT, async (req, res) => {
