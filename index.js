@@ -289,12 +289,11 @@ async function run() {
       res.send(result);
     });
 
-    app.post('/bookings', verifyJWT, async (req, res) => {
-        const booking = req.body;
-        booking.timestamp = Date.now();
-        const result = await bookingCollection.insertOne(booking);
-        console.log({booking, result});
-        res.send(result);
+    app.get('/myorders', verifyJWT, async (req, res) => {
+      const query = { buyerUid: req.decoded.uid };
+      const bookings = await bookingCollection.find(query).toArray();
+      console.log("result", bookings);
+      res.send(bookings);
     });
 
   } finally {
