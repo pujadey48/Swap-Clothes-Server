@@ -1,1 +1,2 @@
 Git Link: [https://github.com/programming-hero-web-course-4/b612-used-products-resale-server-side-pujadey48.git](https://github.com/programming-hero-web-course-4/b612-used-products-resale-server-side-pujadey48.git)
+Live Link: [https://assignment-12-server-pujadey48.vercel.app](https://assignment-12-server-pujadey48.vercel.app)
