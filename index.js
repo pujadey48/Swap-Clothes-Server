@@ -1,10 +1,12 @@
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const express = require('express');
-const cors = require('cors');
-const jwt = require('jsonwebtoken');
-require('dotenv').config();
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const express = require("express");
+const cors = require("cors");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 const app = express();
-const port = process.env.PORT || 5000
+const port = process.env.PORT || 5000;
 
 // middleware
 app.use(cors());
@@ -51,6 +53,7 @@ async function run() {
       .collection("categories");
     const productCollection = client.db("swapClothes").collection("products");
     const bookingCollection = client.db("swapClothes").collection("booking");
+    const paymentCollection = client.db("swapClothes").collection("payment");
 
     async function verifyAdmin(req, res, next) {
       const query = { uid: req.decoded.uid };
@@ -136,7 +139,7 @@ async function run() {
     app.get("/advertisedProducts", async (req, res) => {
       const query = {
         show_in_ad: true,
-        status: 'available',
+        status: "available",
       };
       const products = await productCollection.find(query).toArray();
       res.send(products);
@@ -289,20 +292,62 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/myorders', verifyJWT, async (req, res) => {
+    app.get("/myorders", verifyJWT, async (req, res) => {
       const query = { buyerUid: req.decoded.uid };
       const bookings = await bookingCollection.find(query).toArray();
       console.log("result", bookings);
       res.send(bookings);
     });
 
-    app.get('/booking/:id', verifyJWT, async (req, res) => {
-      const query = { _id: ObjectId(rec.params.id) };
+    app.get("/booking/:id", verifyJWT, async (req, res) => {
+      const query = { _id: ObjectId(req.params.id) };
       const bookings = await bookingCollection.findOne(query);
       console.log("result", bookings);
       res.send(bookings);
     });
 
+    app.post("/create-payment-intent", async (req, res) => {
+      const booking = req.body;
+      const price = booking.productSellingPrice;
+      const amount = price * 100;
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        currency: "bdt",
+        amount: amount,
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    app.post("/payments", verifyJWT, async (req, res) => {
+      const payment = req.body;
+      const result = await paymentCollection.insertOne(payment);
+
+      const id = payment.bookingId;
+      const filter = { _id: ObjectId(id) };
+      let updatedDoc = {
+        $set: {
+          paymentStatus: "paid",
+          paymentTransactionId: payment.transactionId,
+        },
+      };
+      const updatedResult = await bookingCollection.updateOne(
+        filter,
+        updatedDoc
+      );
+
+      // changing status of product from 'available' to 'booked'
+      const query = { _id: ObjectId(payment.productID) };
+      updatedDoc = {
+        $set: {
+          status: "sold",
+        },
+      };
+      await productCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    });
   } finally {
   }
 }
