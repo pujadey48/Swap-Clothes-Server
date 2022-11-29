@@ -50,6 +50,7 @@ async function run() {
       .db("swapClothes")
       .collection("categories");
     const productCollection = client.db("swapClothes").collection("products");
+    const bookingCollection = client.db("swapClothes").collection("booking");
 
     async function verifyAdmin(req, res, next) {
       const query = { uid: req.decoded.uid };
@@ -265,6 +266,37 @@ async function run() {
       console.log({ query, result });
       res.send(result);
     });
+
+    app.post("/booknow", verifyJWT, async (req, res) => {
+      const booking = req.body;
+
+      // changing status of product from 'available' to 'booked'
+      const query = { _id: ObjectId(booking.productID) };
+      const updatedDoc = {
+        $set: {
+          status: "booked",
+        },
+      };
+      await productCollection.updateOne(query, updatedDoc);
+
+      // adding booking in collection
+      booking.buyerUid = req.decoded.uid;
+      booking.timestamp = Date.now();
+      booking.paymentStatus = "unpaid";
+      booking.paymentTransactionId = "";
+      const result = await bookingCollection.insertOne(booking);
+      console.log("result", result);
+      res.send(result);
+    });
+
+    app.post('/bookings', verifyJWT, async (req, res) => {
+        const booking = req.body;
+        booking.timestamp = Date.now();
+        const result = await bookingCollection.insertOne(booking);
+        console.log({booking, result});
+        res.send(result);
+    });
+
   } finally {
   }
 }
