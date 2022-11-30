@@ -307,15 +307,17 @@ async function run() {
       res.send(bookings);
     });
 
-    app.post("/create-payment-intent", async (req, res) => {
+    app.post("/create-payment-intent", cors(), async (req, res) => {
       const booking = req.body;
       const price = booking.productSellingPrice;
       const amount = price * 100;
 
+      console.log(booking);
+
       let query = { _id: ObjectId(booking.productID) };
       const product = await productCollection.findOne(query);
 
-      if (product.status === "") {
+      if (product.status === "booked") {
         const paymentIntent = await stripe.paymentIntents.create({
           currency: "bdt",
           amount: amount,
